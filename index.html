@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Memory Game & Fast Sequence N Back Task</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      text-align: center;
+      transition: background-color 0.3s;
+    }
+    /* All pages are contained in .page; only .active is shown */
+    .page {
+      display: none;
+    }
+    .active {
+      display: block;
+    }
+    /* Settings form styles */
+    #settingsForm label {
+      display: block;
+      margin: 5px 0;
+    }
+    #settingsForm input, #settingsForm select {
+      margin-left: 10px;
+    }
+    #settingsForm button {
+      margin: 10px;
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+    /* Container for game layout (grid + side buttons) */
+    .gameContainer {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      margin-top: 20px;
+    }
+    /* Grid container (always square, roughly 80% of viewport’s smaller dimension) */
+    .gridContainer {
+      display: grid;
+      gap: 2px;
+      width: 80vmin;
+      height: 80vmin;
+    }
+    /* Each grid cell */
+    .cell {
+      border: 1px solid #ccc;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: inherit;
+      transition: opacity 0.2s, background-color 0.2s;
+    }
+    /* Side buttons container */
+    .sideButtons {
+      margin-left: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .sideButtons button {
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- SETTINGS PAGE -->
+  <div id="settingsPage" class="page active">
+    <h1>Task Settings</h1>
+    <form id="settingsForm">
+      <!-- Common settings for both tasks -->
+      <label>
+        Rows:
+        <input type="number" id="rows" min="2" max="20" value="4" required>
+      </label>
+      <label>
+        Columns:
+        <input type="number" id="cols" min="2" max="20" value="4" required>
+      </label>
+      <label>
+        Number of Squares:
+        <input type="number" id="numSquares" min="2" max="20" value="3" required>
+      </label>
+      <label>
+        Flash Time (ms):
+        <input type="number" id="flashTime" min="50" max="1000" value="150" required>
+      </label>
+      <label>
+        Grid Color:
+        <select id="gridColor">
+          <option value="black">Black</option>
+          <option value="yellow">Yellow</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="red">Red</option>
+          <option value="white">White</option>
+        </select>
+      </label>
+      <label>
+        Square Color:
+        <select id="squareColor">
+          <option value="white" selected>White</option>
+          <option value="black">Black</option>
+          <option value="yellow">Yellow</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="red">Red</option>
+        </select>
+      </label>
+      <hr>
+      <!-- Additional settings for N-Back task -->
+      <label>
+        N Level:
+        <input type="number" id="nLevel" min="1" value="2" required>
+      </label>
+      <label>
+        Sec/Trial:
+        <input type="number" id="secTrial" min="1" step="0.1" value="2" required>
+      </label>
+      <label>
+        Trial Number/Set:
+        <input type="number" id="trialNum" min="1" value="25" required>
+      </label>
+      <br>
+      <!-- Two buttons: one for Memory Game, one for N-Back -->
+      <button type="button" id="memoryGameBtn">Save Settings &amp; Play Memory Game</button>
+      <button type="button" id="nBackBtn">Fast Sequence N Back</button>
+    </form>
+  </div>
+
+  <!-- MEMORY GAME PAGE (Unchanged from previous version) -->
+  <div id="gamePage" class="page" tabindex="0">
+    <h1>Memory Game</h1>
+    <p>Press the spacebar to start the game.<br>
+       Then click the grid cells in the flashed order.</p>
+    <div class="gameContainer">
+      <div id="gridContainer" class="gridContainer"></div>
+      <div class="sideButtons">
+        <button id="retryBtn" style="display: none;">Retry</button>
+        <button id="backBtn">Back to Settings</button>
+      </div>
+    </div>
+    <p id="message"></p>
+  </div>
+
+  <!-- N-BACK TASK PAGE -->
+  <div id="nBackPage" class="page" tabindex="0">
+    <h1>Fast Sequence N Back</h1>
+    <p>For each trial, press the "L" key if the current flash sequence matches the sequence presented N trials back.</p>
+    <div class="gameContainer">
+      <div id="nBackGridContainer" class="gridContainer"></div>
+      <div class="sideButtons">
+        <button id="nBackBackBtn">Back to Settings</button>
+      </div>
+    </div>
+    <p id="nBackMessage"></p>
+    <p id="nBackScore"></p>
+  </div>
+
+  <script>
+    /********** Global Settings & Variables **********/
+    let settings = {
+      rows: 4,
+      cols: 4,
+      numSquares: 5,
+      flashTime: 200,
+      gridColor: 'black',
+      squareColor: 'white'
+    };
+    // Memory game variables
+    let flashSequence = [];
+    let userSequence = [];
+    let isInputEnabled = false;
+    // N-Back variables
+    let nBackTrials = [];
+    let currentTrialIndex = 0;
+    let nBackResponse = false;
+    let nLevel = 2, secTrialMs = 3000, totalTrials = 10;
+    let nBackCorrectCount = 0, nBackIncorrectCount = 0;
+    let nBackModeActive = false;
+    let trialStartTime = 0;
+    const colorPalette = ["black", "yellow", "green", "blue", "red", "white"];
+
+    /********** SETTINGS PAGE: Event Listeners **********/
+    const memoryGameBtn = document.getElementById('memoryGameBtn');
+    const nBackBtn = document.getElementById('nBackBtn');
+    const settingsForm = document.getElementById('settingsForm');
+    settingsForm.addEventListener('submit', function(e) { e.preventDefault(); });
+    memoryGameBtn.addEventListener('click', function() {
+      settings.rows = parseInt(document.getElementById('rows').value);
+      settings.cols = parseInt(document.getElementById('cols').value);
+      settings.numSquares = parseInt(document.getElementById('numSquares').value);
+      settings.flashTime = parseInt(document.getElementById('flashTime').value);
+      settings.gridColor = document.getElementById('gridColor').value;
+      settings.squareColor = document.getElementById('squareColor').value;
+      document.getElementById('settingsPage').classList.remove('active');
+      document.getElementById('nBackPage').classList.remove('active');
+      document.getElementById('gamePage').classList.add('active');
+      buildGrid();
+      document.getElementById('gamePage').focus();
+      document.getElementById('retryBtn').style.display = "none";
+      document.getElementById('message').textContent = "";
+    });
+    nBackBtn.addEventListener('click', function() {
+      settings.rows = parseInt(document.getElementById('rows').value);
+      settings.cols = parseInt(document.getElementById('cols').value);
+      settings.numSquares = parseInt(document.getElementById('numSquares').value);
+      settings.flashTime = parseInt(document.getElementById('flashTime').value);
+      settings.gridColor = document.getElementById('gridColor').value;
+      settings.squareColor = document.getElementById('squareColor').value;
+      nLevel = parseInt(document.getElementById('nLevel').value);
+      secTrialMs = parseFloat(document.getElementById('secTrial').value) * 1000;
+      totalTrials = parseInt(document.getElementById('trialNum').value);
+      startNBack();
+    });
+
+    /********** MEMORY GAME CODE **********/
+    const gridContainer = document.getElementById('gridContainer');
+    const messageEl = document.getElementById('message');
+    const retryBtn = document.getElementById('retryBtn');
+    document.getElementById('backBtn').addEventListener('click', function() {
+      flashSequence = [];
+      userSequence = [];
+      isInputEnabled = false;
+      messageEl.textContent = "";
+      retryBtn.style.display = "none";
+      document.getElementById('gamePage').classList.remove('active');
+      document.getElementById('settingsPage').classList.add('active');
+    });
+    function buildGrid() {
+      gridContainer.innerHTML = '';
+      gridContainer.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
+      gridContainer.style.gridTemplateRows = `repeat(${settings.rows}, 1fr)`;
+      gridContainer.style.backgroundColor = settings.gridColor;
+      const totalCells = settings.rows * settings.cols;
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.index = i;
+        cell.addEventListener('click', onCellClick);
+        gridContainer.appendChild(cell);
+      }
+    }
+    function onCellClick(e) {
+      if (!isInputEnabled) return;
+      const index = parseInt(e.target.dataset.index);
+      userSequence.push(index);
+      e.target.style.opacity = 0.5;
+      if (userSequence.length === flashSequence.length) {
+        isInputEnabled = false;
+        checkSequence();
+      }
+    }
+    function checkSequence() {
+      let correct = flashSequence.every((val, idx) => val === userSequence[idx]);
+      messageEl.textContent = correct ? "Correct!" : "Incorrect!";
+      retryBtn.style.display = "inline-block";
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.code === 'Space' && document.getElementById('gamePage').classList.contains('active') && !isInputEnabled) {
+        startGame();
+      }
+    });
+    async function startGame() {
+      flashSequence = [];
+      userSequence = [];
+      messageEl.textContent = "";
+      retryBtn.style.display = "none";
+      const cells = document.querySelectorAll('#gridContainer .cell');
+      cells.forEach(cell => {
+        cell.style.opacity = 1;
+        cell.style.backgroundColor = "";
+      });
+      const totalCells = settings.rows * settings.cols;
+      for (let i = 0; i < settings.numSquares; i++) {
+        let randIndex = Math.floor(Math.random() * totalCells);
+        flashSequence.push(randIndex);
+      }
+      let previousIndex = null;
+      for (let index of flashSequence) {
+        let flashColor = settings.squareColor;
+        if (previousIndex !== null && previousIndex === index) {
+          let alternatives = colorPalette.filter(color => color !== settings.squareColor);
+          flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
+        }
+        await flashCell(index, flashColor);
+        previousIndex = index;
+      }
+      isInputEnabled = true;
+    }
+    function flashCell(index, flashColor = settings.squareColor) {
+      return new Promise(resolve => {
+        const cell = document.querySelector(`#gridContainer .cell[data-index='${index}']`);
+        if (cell) {
+          let originalBg = cell.style.backgroundColor;
+          cell.style.backgroundColor = flashColor;
+          setTimeout(() => {
+            cell.style.backgroundColor = originalBg;
+            resolve();
+          }, settings.flashTime);
+        } else {
+          resolve();
+        }
+      });
+    }
+    async function retryAttempt() {
+      isInputEnabled = false;
+      userSequence = [];
+      const cells = document.querySelectorAll('#gridContainer .cell');
+      cells.forEach(cell => {
+        cell.style.opacity = 1;
+        cell.style.backgroundColor = "";
+      });
+      let previousIndex = null;
+      for (let index of flashSequence) {
+        let flashColor = settings.squareColor;
+        if (previousIndex !== null && previousIndex === index) {
+          let alternatives = colorPalette.filter(color => color !== settings.squareColor);
+          flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
+        }
+        await flashCell(index, flashColor);
+        previousIndex = index;
+      }
+      isInputEnabled = true;
+      messageEl.textContent = "Try again!";
+    }
+    retryBtn.addEventListener('click', retryAttempt);
+
+    /********** N-BACK TASK CODE **********/
+    document.getElementById('nBackBackBtn').addEventListener('click', function() {
+      nBackModeActive = false;
+      document.getElementById('nBackPage').classList.remove('active');
+      document.getElementById('settingsPage').classList.add('active');
+    });
+    function buildNBackGrid() {
+      const nBackGridContainer = document.getElementById('nBackGridContainer');
+      nBackGridContainer.innerHTML = '';
+      nBackGridContainer.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
+      nBackGridContainer.style.gridTemplateRows = `repeat(${settings.rows}, 1fr)`;
+      nBackGridContainer.style.backgroundColor = settings.gridColor;
+      const totalCells = settings.rows * settings.cols;
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.index = i;
+        nBackGridContainer.appendChild(cell);
+      }
+    }
+    function generateNBackTrials() {
+      nBackTrials = [];
+      const totalCells = settings.rows * settings.cols;
+      for (let i = 0; i < totalTrials; i++) {
+        let trialSeq = [];
+        for (let j = 0; j < settings.numSquares; j++) {
+          trialSeq.push(Math.floor(Math.random() * totalCells));
+        }
+        // With 30% probability, force a target if i >= nLevel
+        if (i >= nLevel && Math.random() < 0.3) {
+          trialSeq = nBackTrials[i - nLevel].slice();
+        }
+        nBackTrials.push(trialSeq);
+      }
+    }
+    function nBackFlashCell(index, flashColor = settings.squareColor) {
+      return new Promise(resolve => {
+        const cell = document.querySelector(`#nBackGridContainer .cell[data-index='${index}']`);
+        if (cell) {
+          let originalBg = cell.style.backgroundColor;
+          cell.style.backgroundColor = flashColor;
+          setTimeout(() => {
+            cell.style.backgroundColor = originalBg;
+            resolve();
+          }, settings.flashTime);
+        } else {
+          resolve();
+        }
+      });
+    }
+    async function flashNBackTrial(trialSeq) {
+      let previousIndex = null;
+      for (let index of trialSeq) {
+        let flashColor = settings.squareColor;
+        if (previousIndex !== null && previousIndex === index) {
+          let alternatives = colorPalette.filter(color => color !== settings.squareColor);
+          flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
+        }
+        await nBackFlashCell(index, flashColor);
+        previousIndex = index;
+      }
+    }
+    async function runNBackTrial() {
+      nBackResponse = false;
+      const trialSeq = nBackTrials[currentTrialIndex];
+      trialStartTime = Date.now();
+      await flashNBackTrial(trialSeq);
+      const elapsed = Date.now() - trialStartTime;
+      const remaining = secTrialMs - elapsed;
+      if (remaining > 0) {
+        await new Promise(resolve => setTimeout(resolve, remaining));
+      }
+      // Evaluate response only if no response was made.
+      if (!nBackResponse) {
+        // Only if it's a target, flash red for a missed response.
+        if (currentTrialIndex >= nLevel && arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel])) {
+          nBackIncorrectCount++;
+          flashNBackFeedback(false);
+        }
+        // Otherwise (non-target with no response), do nothing.
+      }
+      currentTrialIndex++;
+      if (currentTrialIndex < totalTrials) {
+        setTimeout(runNBackTrial, 500);
+      } else {
+        document.getElementById('nBackScore').textContent =
+          `Session complete: ${nBackCorrectCount} correct, ${nBackIncorrectCount} incorrect.`;
+        nBackModeActive = false;
+      }
+    }
+    function arraysEqual(a, b) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
+    }
+    function flashNBackFeedback(isCorrect) {
+      const nBackPage = document.getElementById('nBackPage');
+      const originalBg = nBackPage.style.backgroundColor || "";
+      nBackPage.style.backgroundColor = isCorrect ? "lightgreen" : "red";
+      setTimeout(() => {
+        nBackPage.style.backgroundColor = originalBg;
+      }, 300);
+    }
+    function startNBack() {
+      buildNBackGrid();
+      generateNBackTrials();
+      currentTrialIndex = 0;
+      nBackCorrectCount = 0;
+      nBackIncorrectCount = 0;
+      nBackModeActive = true;
+      document.getElementById('nBackMessage').textContent = "";
+      document.getElementById('nBackScore').textContent = "";
+      document.getElementById('settingsPage').classList.remove('active');
+      document.getElementById('gamePage').classList.remove('active');
+      document.getElementById('nBackPage').classList.add('active');
+      document.getElementById('nBackPage').focus();
+      runNBackTrial();
+    }
+    // Immediate feedback when "L" is pressed in N-back mode.
+    document.addEventListener('keydown', function(e) {
+      if (nBackModeActive && e.code === 'KeyL' && !nBackResponse) {
+        nBackResponse = true;
+        let isTarget = false;
+        if (currentTrialIndex < nLevel) {
+          isTarget = false;
+        } else {
+          isTarget = arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel]);
+        }
+        if (isTarget) {
+          nBackCorrectCount++;
+          flashNBackFeedback(true);
+        } else {
+          nBackIncorrectCount++;
+          flashNBackFeedback(false);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

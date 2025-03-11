@@ -127,6 +127,14 @@
         Trial Number/Set:
         <input type="number" id="trialNum" min="1" value="25" required>
       </label>
+      <label>
+        Percent Match:
+        <input type="number" id="percentMatch" min="0" max="100" value="30" required>
+      </label>
+      <label>
+        Interference Control (%):
+        <input type="number" id="interferenceControl" min="0" max="100" value="50" required>
+      </label>
       <br>
       <!-- Two buttons: one for Memory Game, one for N-Back -->
       <button type="button" id="memoryGameBtn">Save Settings &amp; Play Memory Game</button>
@@ -185,6 +193,11 @@
     let nBackCorrectCount = 0, nBackIncorrectCount = 0;
     let nBackModeActive = false;
     let trialStartTime = 0;
+    // Percent match setting (percentage chance to force an exact match)
+    let percentMatch = 30;
+    // Interference control setting: if a trial is determined to be non-match,
+    // with this probability the trial will be generated as exactly one square different from the base trial.
+    let interferenceControl = 50;
     const colorPalette = ["black", "yellow", "green", "blue", "red", "white"];
 
     /********** SETTINGS PAGE: Event Listeners **********/
@@ -217,6 +230,8 @@
       nLevel = parseInt(document.getElementById('nLevel').value);
       secTrialMs = parseFloat(document.getElementById('secTrial').value) * 1000;
       totalTrials = parseInt(document.getElementById('trialNum').value);
+      percentMatch = parseFloat(document.getElementById('percentMatch').value);
+      interferenceControl = parseFloat(document.getElementById('interferenceControl').value);
       startNBack();
     });
 
@@ -352,20 +367,58 @@
         nBackGridContainer.appendChild(cell);
       }
     }
+    // Generate N-Back trials.
+    // For trials i < nLevel, generate a completely random trial.
+    // For i ≥ nLevel, if a random number is less than (percentMatch/100) then force an exact match.
+    // Otherwise, if a random number is less than (interferenceControl/100), generate an interference trial that is exactly one square different from the base trial.
+    // If neither condition applies, generate a completely random trial.
     function generateNBackTrials() {
       nBackTrials = [];
       const totalCells = settings.rows * settings.cols;
       for (let i = 0; i < totalTrials; i++) {
         let trialSeq = [];
-        for (let j = 0; j < settings.numSquares; j++) {
-          trialSeq.push(Math.floor(Math.random() * totalCells));
-        }
-        // With 30% probability, force a target if i >= nLevel
-        if (i >= nLevel && Math.random() < 0.3) {
-          trialSeq = nBackTrials[i - nLevel].slice();
+        if (i < nLevel) {
+          // First nLevel trials are random.
+          for (let j = 0; j < settings.numSquares; j++) {
+            trialSeq.push(Math.floor(Math.random() * totalCells));
+          }
+        } else {
+          const baseTrial = nBackTrials[i - nLevel];
+          if (Math.random() < (percentMatch / 100)) {
+            // Exact match trial.
+            trialSeq = baseTrial.slice();
+          } else if (Math.random() < (interferenceControl / 100)) {
+            // Interference trial: force a trial that is exactly one square different from baseTrial.
+            trialSeq = generateInterferenceTrial(baseTrial, totalCells);
+          } else {
+            // Completely random trial.
+            for (let j = 0; j < settings.numSquares; j++) {
+              trialSeq.push(Math.floor(Math.random() * totalCells));
+            }
+            // If by chance it equals baseTrial, adjust one element.
+            if (arraysEqual(trialSeq, baseTrial)) {
+              trialSeq[0] = (trialSeq[0] + 1) % totalCells;
+            }
+          }
         }
         nBackTrials.push(trialSeq);
       }
+    }
+    // Helper function: Generate an interference trial that is exactly one square different from baseTrial.
+    // This function ensures that the generated trial is NOT identical to baseTrial.
+    function generateInterferenceTrial(baseTrial, totalCells) {
+      let trial = baseTrial.slice();
+      let indexToChange = Math.floor(Math.random() * trial.length);
+      let newValue;
+      do {
+        newValue = Math.floor(Math.random() * totalCells);
+      } while (newValue === baseTrial[indexToChange]);
+      trial[indexToChange] = newValue;
+      // Double-check: if trial equals baseTrial (should not happen), force a change.
+      if (arraysEqual(trial, baseTrial)) {
+        trial[0] = (trial[0] + 1) % totalCells;
+      }
+      return trial;
     }
     function nBackFlashCell(index, flashColor = settings.squareColor) {
       return new Promise(resolve => {
@@ -406,12 +459,12 @@
       }
       // Evaluate response only if no response was made.
       if (!nBackResponse) {
-        // Only if it's a target, flash red for a missed response.
         if (currentTrialIndex >= nLevel && arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel])) {
+          // Missed a target.
           nBackIncorrectCount++;
           flashNBackFeedback(false);
         }
-        // Otherwise (non-target with no response), do nothing.
+        // Otherwise, for non-target with no response, do nothing.
       }
       currentTrialIndex++;
       if (currentTrialIndex < totalTrials) {

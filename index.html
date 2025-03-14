@@ -10,62 +10,61 @@
       text-align: center;
       transition: background-color 0.3s;
     }
-    /* All pages are contained in .page; only .active is shown */
-    .page {
-      display: none;
-    }
-    .active {
-      display: block;
-    }
-    /* Settings form styles */
+    /* Pages */
+    .page { display: none; }
+    .active { display: block; }
+
+    /* Settings Form */
     #settingsForm label {
-      display: block;
-      margin: 5px 0;
+      display: block; margin: 5px 0;
     }
     #settingsForm input, #settingsForm select {
       margin-left: 10px;
     }
     #settingsForm button {
-      margin: 10px;
-      padding: 8px 12px;
-      font-size: 16px;
+      margin: 10px; padding: 8px 12px; font-size: 16px;
     }
-    /* Container for game layout (grid + side buttons) */
+
+    /* Game Container */
     .gameContainer {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      margin-top: 20px;
+      display: flex; justify-content: center; align-items: flex-start; margin-top: 20px;
     }
-    /* Grid container (always square, roughly 80% of viewport’s smaller dimension) */
+    /* Grid Container (Memory or N-Back) */
     .gridContainer {
-      display: grid;
-      gap: 2px;
-      width: 80vmin;
-      height: 80vmin;
+      display: grid; gap: 2px; width: 80vmin; height: 80vmin;
+      background-color: inherit;
     }
-    /* Each grid cell */
+    /* Each Grid Cell */
     .cell {
       border: 1px solid #ccc;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
       background-color: inherit;
       transition: opacity 0.2s, background-color 0.2s;
+      font-size: 2em; /* for letter stimulus */
     }
-    /* Side buttons container */
+    /* Side Buttons */
     .sideButtons {
-      margin-left: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
+      margin-left: 20px; display: flex; flex-direction: column; justify-content: flex-start;
     }
     .sideButtons button {
-      margin-bottom: 10px;
-      padding: 10px;
-      font-size: 16px;
+      margin-bottom: 10px; padding: 10px; font-size: 16px;
+    }
+    /* Score container to show after N back session */
+    .scoreContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px; /* adjust spacing as desired */
+      margin-top: 10px;
+    }
+    /* Simple style for the separate feedback containers in N-Back */
+    #letterFeedback, #spatialFeedback {
+      width: 20vmin; height: 80vmin;
+      background-color: transparent; /* will be set to red/green briefly for feedback */
+      transition: background-color 0.2s;
+      margin: 0 10px; /* spacing around them */
+      display: flex; align-items: center; justify-content: center;
     }
   </style>
 </head>
@@ -74,25 +73,12 @@
   <div id="settingsPage" class="page active">
     <h1>Task Settings</h1>
     <form id="settingsForm">
-      <!-- Common settings for both tasks -->
-      <label>
-        Rows:
-        <input type="number" id="rows" min="2" max="20" value="4" required>
-      </label>
-      <label>
-        Columns:
-        <input type="number" id="cols" min="2" max="20" value="4" required>
-      </label>
-      <label>
-        Number of Squares:
-        <input type="number" id="numSquares" min="2" max="20" value="3" required>
-      </label>
-      <label>
-        Flash Time (ms):
-        <input type="number" id="flashTime" min="50" max="1000" value="150" required>
-      </label>
-      <label>
-        Grid Color:
+      <!-- Common settings -->
+      <label>Rows: <input type="number" id="rows" min="2" max="20" value="4" required></label>
+      <label>Columns: <input type="number" id="cols" min="2" max="20" value="4" required></label>
+      <label>Number of Squares: <input type="number" id="numSquares" min="2" max="20" value="3" required></label>
+      <label>Flash Time (ms): <input type="number" id="flashTime" min="50" max="1000" value="150" required></label>
+      <label>Grid Color:
         <select id="gridColor">
           <option value="black">Black</option>
           <option value="yellow">Yellow</option>
@@ -102,8 +88,7 @@
           <option value="white">White</option>
         </select>
       </label>
-      <label>
-        Square Color:
+      <label>Square Color:
         <select id="squareColor">
           <option value="white" selected>White</option>
           <option value="black">Black</option>
@@ -114,39 +99,31 @@
         </select>
       </label>
       <hr>
-      <!-- Additional settings for N-Back task -->
-      <label>
-        N Level:
-        <input type="number" id="nLevel" min="1" value="2" required>
+      <!-- Memory Task Settings -->
+      <label>Flash Delay (ms): <input type="number" id="flashDelay" min="0" value="50" required></label>
+      <label>Alternate Color for Consecutive Flashes:
+        <input type="checkbox" id="alternateColor">
       </label>
-      <label>
-        Sec/Trial:
-        <input type="number" id="secTrial" min="1" step="0.1" value="2" required>
-      </label>
-      <label>
-        Trial Number/Set:
-        <input type="number" id="trialNum" min="1" value="25" required>
-      </label>
-      <label>
-        Percent Match:
-        <input type="number" id="percentMatch" min="0" max="100" value="30" required>
-      </label>
-      <label>
-        Interference Control (%):
-        <input type="number" id="interferenceControl" min="0" max="100" value="50" required>
+      <hr>
+      <!-- N-Back Task Settings -->
+      <label>N Level: <input type="number" id="nLevel" min="1" value="2" required></label>
+      <label>Sec/Trial: <input type="number" id="secTrial" min="1" step="0.1" value="2" required></label>
+      <label>Trial Number/Set: <input type="number" id="trialNum" min="1" value="15" required></label>
+      <label>Percent Match: <input type="number" id="percentMatch" min="0" max="100" value="30" required></label>
+      <label>Interference Control (%): <input type="number" id="interferenceControl" min="0" max="100" value="50" required></label>
+      <label>Add Letter Stimulus:
+        <input type="checkbox" id="letterStimulus">
       </label>
       <br>
-      <!-- Two buttons: one for Memory Game, one for N-Back -->
       <button type="button" id="memoryGameBtn">Save Settings &amp; Play Memory Game</button>
       <button type="button" id="nBackBtn">Fast Sequence N Back</button>
     </form>
   </div>
 
-  <!-- MEMORY GAME PAGE (Unchanged from previous version) -->
+  <!-- MEMORY GAME PAGE -->
   <div id="gamePage" class="page" tabindex="0">
     <h1>Memory Game</h1>
-    <p>Press the spacebar to start the game.<br>
-       Then click the grid cells in the flashed order.</p>
+    <p>Press the spacebar to start the game.<br>Then click the grid cells in the flashed order.</p>
     <div class="gameContainer">
       <div id="gridContainer" class="gridContainer"></div>
       <div class="sideButtons">
@@ -160,370 +137,618 @@
   <!-- N-BACK TASK PAGE -->
   <div id="nBackPage" class="page" tabindex="0">
     <h1>Fast Sequence N Back</h1>
-    <p>For each trial, press the "L" key if the current flash sequence matches the sequence presented N trials back.</p>
+    <p>
+      Press <strong>L</strong> if the spatial sequence matches the sequence presented N trials back.<br>
+      If "Add Letter Stimulus" is enabled, a random letter appears on each flash.
+      In that case, press <strong>K</strong> if the letter sequence matches N trials back.
+    </p>
     <div class="gameContainer">
+      <!-- Left container for letter feedback -->
+      <div id="letterFeedback"></div>
+      <!-- The actual N-back grid in the center -->
       <div id="nBackGridContainer" class="gridContainer"></div>
+      <!-- Right container for spatial feedback -->
+      <div id="spatialFeedback"></div>
       <div class="sideButtons">
         <button id="nBackBackBtn">Back to Settings</button>
       </div>
     </div>
     <p id="nBackMessage"></p>
-    <p id="nBackScore"></p>
+    <div class="scoreContainer">
+      <p id="nBackScore"></p>
+      <p id="nBackLetterScore"></p>
+    </div>
   </div>
 
   <script>
-    /********** Global Settings & Variables **********/
-    let settings = {
-      rows: 4,
-      cols: 4,
-      numSquares: 5,
-      flashTime: 200,
-      gridColor: 'black',
-      squareColor: 'white'
-    };
-    // Memory game variables
-    let flashSequence = [];
-    let userSequence = [];
-    let isInputEnabled = false;
-    // N-Back variables
-    let nBackTrials = [];
-    let currentTrialIndex = 0;
-    let nBackResponse = false;
-    let nLevel = 2, secTrialMs = 3000, totalTrials = 10;
-    let nBackCorrectCount = 0, nBackIncorrectCount = 0;
-    let nBackModeActive = false;
-    let trialStartTime = 0;
-    // Percent match setting (percentage chance to force an exact match)
-    let percentMatch = 30;
-    // Interference control setting: if a trial is determined to be non-match,
-    // with this probability the trial will be generated as exactly one square different from the base trial.
-    let interferenceControl = 50;
-    const colorPalette = ["black", "yellow", "green", "blue", "red", "white"];
+    (function() {
+      /********** GLOBAL SETTINGS & VARIABLES **********/
+      let settings = {
+        rows: 4,
+        cols: 4,
+        numSquares: 5,
+        flashTime: 150,
+        gridColor: 'black',
+        squareColor: 'white',
+        flashDelay: 50,
+        alternateColor: false
+      };
+      // Memory game
+      let flashSequence = [];
+      let userSequence = [];
+      let isInputEnabled = false;
+      // N-back
+      let nBackTrials = [];
+      let letterTrials = [];
+      let currentTrialIndex = 0;
+      let nBackSpatialResponse = false;
+      let nBackLetterResponse = false;
+      let nBackCorrectCount = 0, nBackIncorrectCount = 0;
+      let nBackLetterCorrectCount = 0, nBackLetterIncorrectCount = 0;
+      let nLevel = 2, secTrialMs = 2000, totalTrials = 15;
+      let percentMatch = 30;
+      let interferenceControl = 50;
+      let letterStimulus = false;
+      let nBackModeActive = false;
+      let trialStartTime = 0;
+      const letterSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const colorPalette = ["black", "yellow", "green", "blue", "red", "white"];
 
-    /********** SETTINGS PAGE: Event Listeners **********/
-    const memoryGameBtn = document.getElementById('memoryGameBtn');
-    const nBackBtn = document.getElementById('nBackBtn');
-    const settingsForm = document.getElementById('settingsForm');
-    settingsForm.addEventListener('submit', function(e) { e.preventDefault(); });
-    memoryGameBtn.addEventListener('click', function() {
-      settings.rows = parseInt(document.getElementById('rows').value);
-      settings.cols = parseInt(document.getElementById('cols').value);
-      settings.numSquares = parseInt(document.getElementById('numSquares').value);
-      settings.flashTime = parseInt(document.getElementById('flashTime').value);
-      settings.gridColor = document.getElementById('gridColor').value;
-      settings.squareColor = document.getElementById('squareColor').value;
-      document.getElementById('settingsPage').classList.remove('active');
-      document.getElementById('nBackPage').classList.remove('active');
-      document.getElementById('gamePage').classList.add('active');
-      buildGrid();
-      document.getElementById('gamePage').focus();
-      document.getElementById('retryBtn').style.display = "none";
-      document.getElementById('message').textContent = "";
-    });
-    nBackBtn.addEventListener('click', function() {
-      settings.rows = parseInt(document.getElementById('rows').value);
-      settings.cols = parseInt(document.getElementById('cols').value);
-      settings.numSquares = parseInt(document.getElementById('numSquares').value);
-      settings.flashTime = parseInt(document.getElementById('flashTime').value);
-      settings.gridColor = document.getElementById('gridColor').value;
-      settings.squareColor = document.getElementById('squareColor').value;
-      nLevel = parseInt(document.getElementById('nLevel').value);
-      secTrialMs = parseFloat(document.getElementById('secTrial').value) * 1000;
-      totalTrials = parseInt(document.getElementById('trialNum').value);
-      percentMatch = parseFloat(document.getElementById('percentMatch').value);
-      interferenceControl = parseFloat(document.getElementById('interferenceControl').value);
-      startNBack();
-    });
-
-    /********** MEMORY GAME CODE **********/
-    const gridContainer = document.getElementById('gridContainer');
-    const messageEl = document.getElementById('message');
-    const retryBtn = document.getElementById('retryBtn');
-    document.getElementById('backBtn').addEventListener('click', function() {
-      flashSequence = [];
-      userSequence = [];
-      isInputEnabled = false;
-      messageEl.textContent = "";
-      retryBtn.style.display = "none";
-      document.getElementById('gamePage').classList.remove('active');
-      document.getElementById('settingsPage').classList.add('active');
-    });
-    function buildGrid() {
-      gridContainer.innerHTML = '';
-      gridContainer.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
-      gridContainer.style.gridTemplateRows = `repeat(${settings.rows}, 1fr)`;
-      gridContainer.style.backgroundColor = settings.gridColor;
-      const totalCells = settings.rows * settings.cols;
-      for (let i = 0; i < totalCells; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.index = i;
-        cell.addEventListener('click', onCellClick);
-        gridContainer.appendChild(cell);
+      // For clearing timeouts
+      let pendingTimeouts = [];
+      function clearPendingTimeouts() {
+        pendingTimeouts.forEach(id => clearTimeout(id));
+        pendingTimeouts = [];
       }
-    }
-    function onCellClick(e) {
-      if (!isInputEnabled) return;
-      const index = parseInt(e.target.dataset.index);
-      userSequence.push(index);
-      e.target.style.opacity = 0.5;
-      if (userSequence.length === flashSequence.length) {
+
+      // Separate timers for letter and spatial feedback
+      let spatialFeedbackTimer = null;
+      let letterFeedbackTimer = null;
+
+      /********** SETTINGS PAGE: Event Handlers **********/
+      const memoryGameBtn = document.getElementById('memoryGameBtn');
+      const nBackBtn = document.getElementById('nBackBtn');
+      const settingsForm = document.getElementById('settingsForm');
+      settingsForm.addEventListener('submit', e => e.preventDefault());
+
+      memoryGameBtn.addEventListener('click', function() {
+        clearPendingTimeouts();
+        document.getElementById('nBackPage').style.backgroundColor = "";
+        settings.rows = +document.getElementById('rows').value;
+        settings.cols = +document.getElementById('cols').value;
+        settings.numSquares = +document.getElementById('numSquares').value;
+        settings.flashTime = +document.getElementById('flashTime').value;
+        settings.gridColor = document.getElementById('gridColor').value;
+        settings.squareColor = document.getElementById('squareColor').value;
+        settings.flashDelay = +document.getElementById('flashDelay').value;
+        settings.alternateColor = document.getElementById('alternateColor').checked;
+
+        document.getElementById('settingsPage').classList.remove('active');
+        document.getElementById('nBackPage').classList.remove('active');
+        document.getElementById('gamePage').classList.add('active');
+
+        buildGrid();
+        document.getElementById('gamePage').focus();
+        document.getElementById('retryBtn').style.display = "none";
+        document.getElementById('message').textContent = "";
+      });
+
+      nBackBtn.addEventListener('click', function() {
+        clearPendingTimeouts();
+        document.getElementById('nBackPage').style.backgroundColor = "";
+        settings.rows = +document.getElementById('rows').value;
+        settings.cols = +document.getElementById('cols').value;
+        settings.numSquares = +document.getElementById('numSquares').value;
+        settings.flashTime = +document.getElementById('flashTime').value;
+        settings.gridColor = document.getElementById('gridColor').value;
+        settings.squareColor = document.getElementById('squareColor').value;
+        settings.flashDelay = +document.getElementById('flashDelay').value;
+        settings.alternateColor = document.getElementById('alternateColor').checked;
+
+        nLevel = +document.getElementById('nLevel').value;
+        secTrialMs = +document.getElementById('secTrial').value * 1000;
+        totalTrials = +document.getElementById('trialNum').value;
+        percentMatch = +document.getElementById('percentMatch').value;
+        interferenceControl = +document.getElementById('interferenceControl').value;
+        letterStimulus = document.getElementById('letterStimulus').checked;
+
+        startNBack();
+      });
+
+      /********** MEMORY GAME CODE **********/
+      const gridContainer = document.getElementById('gridContainer');
+      const messageEl = document.getElementById('message');
+      const retryBtn = document.getElementById('retryBtn');
+
+      document.getElementById('backBtn').addEventListener('click', function() {
+        clearPendingTimeouts();
+        flashSequence = [];
+        userSequence = [];
         isInputEnabled = false;
-        checkSequence();
-      }
-    }
-    function checkSequence() {
-      let correct = flashSequence.every((val, idx) => val === userSequence[idx]);
-      messageEl.textContent = correct ? "Correct!" : "Incorrect!";
-      retryBtn.style.display = "inline-block";
-    }
-    document.addEventListener('keydown', function(e) {
-      if (e.code === 'Space' && document.getElementById('gamePage').classList.contains('active') && !isInputEnabled) {
-        startGame();
-      }
-    });
-    async function startGame() {
-      flashSequence = [];
-      userSequence = [];
-      messageEl.textContent = "";
-      retryBtn.style.display = "none";
-      const cells = document.querySelectorAll('#gridContainer .cell');
-      cells.forEach(cell => {
-        cell.style.opacity = 1;
-        cell.style.backgroundColor = "";
+        messageEl.textContent = "";
+        retryBtn.style.display = "none";
+        document.getElementById('gamePage').classList.remove('active');
+        document.getElementById('settingsPage').classList.add('active');
       });
-      const totalCells = settings.rows * settings.cols;
-      for (let i = 0; i < settings.numSquares; i++) {
-        let randIndex = Math.floor(Math.random() * totalCells);
-        flashSequence.push(randIndex);
-      }
-      let previousIndex = null;
-      for (let index of flashSequence) {
-        let flashColor = settings.squareColor;
-        if (previousIndex !== null && previousIndex === index) {
-          let alternatives = colorPalette.filter(color => color !== settings.squareColor);
-          flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
-        }
-        await flashCell(index, flashColor);
-        previousIndex = index;
-      }
-      isInputEnabled = true;
-    }
-    function flashCell(index, flashColor = settings.squareColor) {
-      return new Promise(resolve => {
-        const cell = document.querySelector(`#gridContainer .cell[data-index='${index}']`);
-        if (cell) {
-          let originalBg = cell.style.backgroundColor;
-          cell.style.backgroundColor = flashColor;
-          setTimeout(() => {
-            cell.style.backgroundColor = originalBg;
-            resolve();
-          }, settings.flashTime);
-        } else {
-          resolve();
-        }
-      });
-    }
-    async function retryAttempt() {
-      isInputEnabled = false;
-      userSequence = [];
-      const cells = document.querySelectorAll('#gridContainer .cell');
-      cells.forEach(cell => {
-        cell.style.opacity = 1;
-        cell.style.backgroundColor = "";
-      });
-      let previousIndex = null;
-      for (let index of flashSequence) {
-        let flashColor = settings.squareColor;
-        if (previousIndex !== null && previousIndex === index) {
-          let alternatives = colorPalette.filter(color => color !== settings.squareColor);
-          flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
-        }
-        await flashCell(index, flashColor);
-        previousIndex = index;
-      }
-      isInputEnabled = true;
-      messageEl.textContent = "Try again!";
-    }
-    retryBtn.addEventListener('click', retryAttempt);
 
-    /********** N-BACK TASK CODE **********/
-    document.getElementById('nBackBackBtn').addEventListener('click', function() {
-      nBackModeActive = false;
-      document.getElementById('nBackPage').classList.remove('active');
-      document.getElementById('settingsPage').classList.add('active');
-    });
-    function buildNBackGrid() {
-      const nBackGridContainer = document.getElementById('nBackGridContainer');
-      nBackGridContainer.innerHTML = '';
-      nBackGridContainer.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
-      nBackGridContainer.style.gridTemplateRows = `repeat(${settings.rows}, 1fr)`;
-      nBackGridContainer.style.backgroundColor = settings.gridColor;
-      const totalCells = settings.rows * settings.cols;
-      for (let i = 0; i < totalCells; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.index = i;
-        nBackGridContainer.appendChild(cell);
+      function buildGrid() {
+        gridContainer.innerHTML = '';
+        gridContainer.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
+        gridContainer.style.gridTemplateRows = `repeat(${settings.rows}, 1fr)`;
+        gridContainer.style.backgroundColor = settings.gridColor;
+        const totalCells = settings.rows * settings.cols;
+        for (let i = 0; i < totalCells; i++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.dataset.index = i;
+          cell.addEventListener('click', onCellClick);
+          gridContainer.appendChild(cell);
+        }
       }
-    }
-    // Generate N-Back trials.
-    // For trials i < nLevel, generate a completely random trial.
-    // For i ≥ nLevel, if a random number is less than (percentMatch/100) then force an exact match.
-    // Otherwise, if a random number is less than (interferenceControl/100), generate an interference trial that is exactly one square different from the base trial.
-    // If neither condition applies, generate a completely random trial.
-    function generateNBackTrials() {
-      nBackTrials = [];
-      const totalCells = settings.rows * settings.cols;
-      for (let i = 0; i < totalTrials; i++) {
-        let trialSeq = [];
-        if (i < nLevel) {
-          // First nLevel trials are random.
-          for (let j = 0; j < settings.numSquares; j++) {
-            trialSeq.push(Math.floor(Math.random() * totalCells));
+
+      function onCellClick(e) {
+        if (!isInputEnabled) return;
+        const index = +e.target.dataset.index;
+        userSequence.push(index);
+        e.target.style.opacity = 0.5;
+        if (userSequence.length === flashSequence.length) {
+          isInputEnabled = false;
+          checkSequence();
+        }
+      }
+
+      function checkSequence() {
+        const correct = flashSequence.every((val, idx) => val === userSequence[idx]);
+        messageEl.textContent = correct ? "Correct!" : "Incorrect!";
+        retryBtn.style.display = "inline-block";
+      }
+
+      document.addEventListener('keydown', e => {
+        if (e.code === 'Space' &&
+            document.getElementById('gamePage').classList.contains('active') &&
+            !isInputEnabled) {
+          startGame();
+        }
+      });
+
+      async function startGame() {
+        clearPendingTimeouts();
+        flashSequence = [];
+        userSequence = [];
+        messageEl.textContent = "";
+        retryBtn.style.display = "none";
+        const cells = document.querySelectorAll('#gridContainer .cell');
+        cells.forEach(cell => {
+          cell.style.opacity = 1;
+          cell.style.backgroundColor = "";
+        });
+        const totalCells = settings.rows * settings.cols;
+        for (let i = 0; i < settings.numSquares; i++) {
+          flashSequence.push(Math.floor(Math.random() * totalCells));
+        }
+        let previousIndex = null;
+        for (let index of flashSequence) {
+          let flashColor = settings.squareColor;
+          if (settings.alternateColor && previousIndex !== null && previousIndex === index) {
+            const alternatives = colorPalette.filter(color => color !== settings.squareColor);
+            flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
           }
-        } else {
-          const baseTrial = nBackTrials[i - nLevel];
-          if (Math.random() < (percentMatch / 100)) {
-            // Exact match trial.
-            trialSeq = baseTrial.slice();
-          } else if (Math.random() < (interferenceControl / 100)) {
-            // Interference trial: force a trial that is exactly one square different from baseTrial.
-            trialSeq = generateInterferenceTrial(baseTrial, totalCells);
+          await flashCell(index, flashColor);
+          let delayID = setTimeout(() => {}, settings.flashDelay);
+          pendingTimeouts.push(delayID);
+          await new Promise(r => setTimeout(r, settings.flashDelay));
+          previousIndex = index;
+        }
+        isInputEnabled = true;
+      }
+
+      function flashCell(index, flashColor = settings.squareColor) {
+        return new Promise(resolve => {
+          const cell = document.querySelector(`#gridContainer .cell[data-index='${index}']`);
+          if (cell) {
+            const originalBg = cell.style.backgroundColor;
+            cell.style.backgroundColor = flashColor;
+            let tID = setTimeout(() => {
+              cell.style.backgroundColor = originalBg;
+              resolve();
+            }, settings.flashTime);
+            pendingTimeouts.push(tID);
           } else {
-            // Completely random trial.
+            console.error("flashCell: Cell not found for index", index);
+            resolve();
+          }
+        });
+      }
+
+      async function retryAttempt() {
+        clearPendingTimeouts();
+        isInputEnabled = false;
+        userSequence = [];
+        const cells = document.querySelectorAll('#gridContainer .cell');
+        cells.forEach(cell => {
+          cell.style.opacity = 1;
+          cell.style.backgroundColor = "";
+        });
+        let previousIndex = null;
+        for (let index of flashSequence) {
+          let flashColor = settings.squareColor;
+          if (settings.alternateColor && previousIndex !== null && previousIndex === index) {
+            const alternatives = colorPalette.filter(color => color !== settings.squareColor);
+            flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
+          }
+          await flashCell(index, flashColor);
+          let delayID = setTimeout(() => {}, settings.flashDelay);
+          pendingTimeouts.push(delayID);
+          await new Promise(r => setTimeout(r, settings.flashDelay));
+          previousIndex = index;
+        }
+        isInputEnabled = true;
+        messageEl.textContent = "Try again!";
+      }
+      retryBtn.addEventListener('click', retryAttempt);
+
+      /********** N-BACK TASK CODE **********/
+      document.getElementById('nBackBackBtn').addEventListener('click', function() {
+        clearPendingTimeouts();
+        // Reset feedback & background
+        document.getElementById('nBackPage').style.backgroundColor = "";
+        document.getElementById('letterFeedback').style.backgroundColor = "transparent";
+        document.getElementById('spatialFeedback').style.backgroundColor = "transparent";
+        if (spatialFeedbackTimer) { clearTimeout(spatialFeedbackTimer); spatialFeedbackTimer = null; }
+        if (letterFeedbackTimer) { clearTimeout(letterFeedbackTimer); letterFeedbackTimer = null; }
+        nBackModeActive = false;
+        document.getElementById('nBackPage').classList.remove('active');
+        document.getElementById('settingsPage').classList.add('active');
+      });
+
+      function buildNBackGrid() {
+        const nBackGridContainer = document.getElementById('nBackGridContainer');
+        nBackGridContainer.innerHTML = '';
+        nBackGridContainer.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
+        nBackGridContainer.style.gridTemplateRows = `repeat(${settings.rows}, 1fr)`;
+        nBackGridContainer.style.backgroundColor = settings.gridColor;
+        const totalCells = settings.rows * settings.cols;
+        console.log("Building N-back grid with", totalCells, "cells");
+        for (let i = 0; i < totalCells; i++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.dataset.index = i;
+          nBackGridContainer.appendChild(cell);
+        }
+      }
+
+      function generateNBackTrials() {
+        nBackTrials = [];
+        const totalCells = settings.rows * settings.cols;
+        for (let i = 0; i < totalTrials; i++) {
+          let trialSeq = [];
+          if (i < nLevel) {
             for (let j = 0; j < settings.numSquares; j++) {
               trialSeq.push(Math.floor(Math.random() * totalCells));
             }
-            // If by chance it equals baseTrial, adjust one element.
-            if (arraysEqual(trialSeq, baseTrial)) {
-              trialSeq[0] = (trialSeq[0] + 1) % totalCells;
+          } else {
+            const baseTrial = nBackTrials[i - nLevel];
+            if (Math.random() < (percentMatch / 100)) {
+              trialSeq = baseTrial.slice();
+            } else if (Math.random() < (interferenceControl / 100)) {
+              if (Math.random() < 0.5) {
+                trialSeq = generateInterferenceTrial(baseTrial, totalCells);
+              } else {
+                let candidates = [];
+                if (i - nLevel - 1 >= 0) { candidates.push(nBackTrials[i - nLevel - 1]); }
+                if (i - nLevel + 1 < i) { candidates.push(nBackTrials[i - nLevel + 1]); }
+                if (candidates.length > 0) {
+                  let candidate = candidates[Math.floor(Math.random() * candidates.length)].slice();
+                  if (arraysEqual(candidate, baseTrial)) {
+                    candidate = generateInterferenceTrial(baseTrial, totalCells);
+                  }
+                  trialSeq = candidate;
+                } else {
+                  trialSeq = generateInterferenceTrial(baseTrial, totalCells);
+                }
+              }
+            } else {
+              for (let j = 0; j < settings.numSquares; j++) {
+                trialSeq.push(Math.floor(Math.random() * totalCells));
+              }
+              if (arraysEqual(trialSeq, baseTrial)) {
+                trialSeq[0] = (trialSeq[0] + 1) % totalCells;
+              }
             }
           }
+          nBackTrials.push(trialSeq);
         }
-        nBackTrials.push(trialSeq);
+        console.log("Generated N-back Trials:", nBackTrials);
       }
-    }
-    // Helper function: Generate an interference trial that is exactly one square different from baseTrial.
-    // This function ensures that the generated trial is NOT identical to baseTrial.
-    function generateInterferenceTrial(baseTrial, totalCells) {
-      let trial = baseTrial.slice();
-      let indexToChange = Math.floor(Math.random() * trial.length);
-      let newValue;
-      do {
-        newValue = Math.floor(Math.random() * totalCells);
-      } while (newValue === baseTrial[indexToChange]);
-      trial[indexToChange] = newValue;
-      // Double-check: if trial equals baseTrial (should not happen), force a change.
-      if (arraysEqual(trial, baseTrial)) {
-        trial[0] = (trial[0] + 1) % totalCells;
+
+      function generateInterferenceTrial(baseTrial, totalCells) {
+        let trial = baseTrial.slice();
+        let indexToChange = Math.floor(Math.random() * trial.length);
+        let newValue;
+        do {
+          newValue = Math.floor(Math.random() * totalCells);
+        } while (newValue === baseTrial[indexToChange]);
+        trial[indexToChange] = newValue;
+        if (arraysEqual(trial, baseTrial)) {
+          trial[0] = (trial[0] + 1) % totalCells;
+        }
+        return trial;
       }
-      return trial;
-    }
-    function nBackFlashCell(index, flashColor = settings.squareColor) {
-      return new Promise(resolve => {
-        const cell = document.querySelector(`#nBackGridContainer .cell[data-index='${index}']`);
-        if (cell) {
-          let originalBg = cell.style.backgroundColor;
+
+      function generateNBackLetterTrials() {
+        letterTrials = [];
+        for (let i = 0; i < totalTrials; i++) {
+          let letterSeq = [];
+          if (i < nLevel) {
+            for (let j = 0; j < settings.numSquares; j++) {
+              letterSeq.push(letterSet[Math.floor(Math.random() * letterSet.length)]);
+            }
+          } else {
+            const baseSeq = letterTrials[i - nLevel];
+            if (Math.random() < (percentMatch / 100)) {
+              letterSeq = baseSeq.slice();
+            } else if (Math.random() < (interferenceControl / 100)) {
+              if (Math.random() < 0.5) {
+                letterSeq = generateLetterInterference(baseSeq);
+              } else {
+                let candidates = [];
+                if (i - nLevel - 1 >= 0) { candidates.push(letterTrials[i - nLevel - 1]); }
+                if (i - nLevel + 1 < i) { candidates.push(letterTrials[i - nLevel + 1]); }
+                if (candidates.length > 0) {
+                  let candidate = candidates[Math.floor(Math.random() * candidates.length)].slice();
+                  if (candidate.join("") === baseSeq.join("")) {
+                    candidate = generateLetterInterference(baseSeq);
+                  }
+                  letterSeq = candidate;
+                } else {
+                  letterSeq = generateLetterInterference(baseSeq);
+                }
+              }
+            } else {
+              for (let j = 0; j < settings.numSquares; j++) {
+                letterSeq.push(letterSet[Math.floor(Math.random() * letterSet.length)]);
+              }
+              if (letterSeq.join("") === baseSeq.join("")) {
+                const idx = letterSet.indexOf(letterSeq[0]);
+                letterSeq[0] = letterSet[(idx + 1) % letterSet.length];
+              }
+            }
+          }
+          letterTrials.push(letterSeq);
+        }
+        console.log("Generated N-back Letter Trials:", letterTrials);
+      }
+
+      function generateLetterInterference(baseSeq) {
+        let seq = baseSeq.slice();
+        let indexToChange = Math.floor(Math.random() * seq.length);
+        let newLetter;
+        do {
+          newLetter = letterSet[Math.floor(Math.random() * letterSet.length)];
+        } while (newLetter === baseSeq[indexToChange]);
+        seq[indexToChange] = newLetter;
+        if (seq.join("") === baseSeq.join("")) {
+          const idx = letterSet.indexOf(seq[0]);
+          seq[0] = letterSet[(idx + 1) % letterSet.length];
+        }
+        return seq;
+      }
+
+      function nBackFlashCell(index, flashColor = settings.squareColor) {
+        return new Promise(resolve => {
+          const cell = document.querySelector(`#nBackGridContainer .cell[data-index='${index}']`);
+          if (!cell) {
+            console.error("nBackFlashCell: Cell not found for index", index);
+            resolve();
+            return;
+          }
+          const originalBg = cell.style.backgroundColor;
           cell.style.backgroundColor = flashColor;
-          setTimeout(() => {
+          let tID = setTimeout(() => {
             cell.style.backgroundColor = originalBg;
             resolve();
           }, settings.flashTime);
+          pendingTimeouts.push(tID);
+        });
+      }
+
+      async function flashNBackTrialOnly(spatialTrial) {
+        let previousIndex = null;
+        for (let index of spatialTrial) {
+          let flashColor = settings.squareColor;
+          if (settings.alternateColor && previousIndex !== null && previousIndex === index) {
+            const alternatives = colorPalette.filter(c => c !== settings.squareColor);
+            flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
+          }
+          await nBackFlashCell(index, flashColor);
+          let delayID = setTimeout(() => {}, settings.flashDelay);
+          pendingTimeouts.push(delayID);
+          await new Promise(r => setTimeout(r, settings.flashDelay));
+          previousIndex = index;
+        }
+      }
+
+      async function flashNBackTrialCombined(spatialTrial, letterTrial) {
+        let previousIndex = null;
+        for (let i = 0; i < spatialTrial.length; i++) {
+          let index = spatialTrial[i];
+          const cell = document.querySelector(`#nBackGridContainer .cell[data-index='${index}']`);
+          if (letterStimulus && cell) {
+            cell.innerText = letterTrial[i];
+          }
+          let flashColor = settings.squareColor;
+          if (settings.alternateColor && previousIndex !== null && previousIndex === index) {
+            const alternatives = colorPalette.filter(c => c !== settings.squareColor);
+            flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
+          }
+          await nBackFlashCell(index, flashColor);
+          if (letterStimulus && cell) {
+            cell.innerText = "";
+          }
+          let delayID = setTimeout(() => {}, settings.flashDelay);
+          pendingTimeouts.push(delayID);
+          await new Promise(r => setTimeout(r, settings.flashDelay));
+          previousIndex = index;
+        }
+      }
+
+      async function runNBackTrial() {
+        nBackSpatialResponse = false;
+        nBackLetterResponse = false;
+        const spatialTrial = nBackTrials[currentTrialIndex];
+        let letterTrial = letterStimulus ? letterTrials[currentTrialIndex] : [];
+        trialStartTime = Date.now();
+        if (letterStimulus) {
+          await flashNBackTrialCombined(spatialTrial, letterTrial);
         } else {
-          resolve();
+          await flashNBackTrialOnly(spatialTrial);
+        }
+        const elapsed = Date.now() - trialStartTime;
+        const remaining = secTrialMs - elapsed;
+        if (remaining > 0) {
+          let leftoverID = setTimeout(() => {}, remaining);
+          pendingTimeouts.push(leftoverID);
+          await new Promise(r => setTimeout(r, remaining));
+        }
+        // Evaluate missed spatial response
+        if (!nBackSpatialResponse && currentTrialIndex >= nLevel &&
+            arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel])) {
+          nBackIncorrectCount++;
+          flashSpatialFeedback(false);
+        }
+        // Evaluate missed letter response
+        if (letterStimulus && !nBackLetterResponse && currentTrialIndex >= nLevel &&
+            letterTrials[currentTrialIndex].join("") === letterTrials[currentTrialIndex - nLevel].join("")) {
+          nBackLetterIncorrectCount++;
+          flashLetterFeedback(false);
+        }
+        currentTrialIndex++;
+        if (currentTrialIndex < totalTrials) {
+          let nextID = setTimeout(runNBackTrial, 500);
+          pendingTimeouts.push(nextID);
+        } else {
+          document.getElementById('nBackScore').textContent =
+            `Spatial: ${nBackCorrectCount} correct, ${nBackIncorrectCount} incorrect.`;
+          if (letterStimulus) {
+            document.getElementById('nBackLetterScore').textContent =
+              `Letter: ${nBackLetterCorrectCount} correct, ${nBackLetterIncorrectCount} incorrect.`;
+          }
+          nBackModeActive = false;
+        }
+      }
+
+      function arraysEqual(a, b) {
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+          if (a[i] !== b[i]) return false;
+        }
+        return true;
+      }
+
+      // Separate feedback: spatial on the right, letter on the left
+      function flashSpatialFeedback(isCorrect) {
+        const spatialContainer = document.getElementById('spatialFeedback');
+        if (!spatialContainer) {
+          console.error("No spatialFeedback container found!");
+          return;
+        }
+        if (spatialFeedbackTimer) {
+          clearTimeout(spatialFeedbackTimer);
+          spatialFeedbackTimer = null;
+          spatialContainer.style.backgroundColor = "transparent";
+        }
+        spatialContainer.style.backgroundColor = isCorrect ? "lightgreen" : "red";
+        spatialFeedbackTimer = setTimeout(() => {
+          spatialContainer.style.backgroundColor = "transparent";
+          spatialFeedbackTimer = null;
+        }, 300);
+        pendingTimeouts.push(spatialFeedbackTimer);
+      }
+
+      function flashLetterFeedback(isCorrect) {
+        const letterContainer = document.getElementById('letterFeedback');
+        if (!letterContainer) {
+          console.error("No letterFeedback container found!");
+          return;
+        }
+        if (letterFeedbackTimer) {
+          clearTimeout(letterFeedbackTimer);
+          letterFeedbackTimer = null;
+          letterContainer.style.backgroundColor = "transparent";
+        }
+        letterContainer.style.backgroundColor = isCorrect ? "lightgreen" : "red";
+        letterFeedbackTimer = setTimeout(() => {
+          letterContainer.style.backgroundColor = "transparent";
+          letterFeedbackTimer = null;
+        }, 300);
+        pendingTimeouts.push(letterFeedbackTimer);
+      }
+
+      function startNBack() {
+        clearPendingTimeouts();
+        document.getElementById('letterFeedback').style.backgroundColor = "transparent";
+        document.getElementById('spatialFeedback').style.backgroundColor = "transparent";
+        if (spatialFeedbackTimer) { clearTimeout(spatialFeedbackTimer); spatialFeedbackTimer = null; }
+        if (letterFeedbackTimer) { clearTimeout(letterFeedbackTimer); letterFeedbackTimer = null; }
+
+        buildNBackGrid();
+        generateNBackTrials();
+        if (letterStimulus) {
+          generateNBackLetterTrials();
+        }
+        currentTrialIndex = 0;
+        nBackCorrectCount = 0;
+        nBackIncorrectCount = 0;
+        nBackLetterCorrectCount = 0;
+        nBackLetterIncorrectCount = 0;
+        nBackModeActive = true;
+
+        document.getElementById('nBackMessage').textContent = "";
+        document.getElementById('nBackScore').textContent = "";
+        document.getElementById('nBackLetterScore').textContent = "";
+        document.getElementById('settingsPage').classList.remove('active');
+        document.getElementById('gamePage').classList.remove('active');
+        document.getElementById('nBackPage').classList.add('active');
+        document.getElementById('nBackPage').focus();
+        runNBackTrial();
+      }
+
+      // Keydown events for N-back
+      document.addEventListener('keydown', function(e) {
+        if (!nBackModeActive) return;
+        // L => spatial
+        if (e.code === 'KeyL' && !nBackSpatialResponse) {
+          nBackSpatialResponse = true;
+          let isTarget = false;
+          if (currentTrialIndex >= nLevel) {
+            isTarget = arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel]);
+          }
+          if (isTarget) {
+            nBackCorrectCount++;
+            flashSpatialFeedback(true);
+          } else {
+            nBackIncorrectCount++;
+            flashSpatialFeedback(false);
+          }
+        }
+        // K => letter
+        if (letterStimulus && e.code === 'KeyK' && !nBackLetterResponse) {
+          nBackLetterResponse = true;
+          let isLetterTarget = false;
+          if (currentTrialIndex >= nLevel) {
+            isLetterTarget = (letterTrials[currentTrialIndex].join("") ===
+                              letterTrials[currentTrialIndex - nLevel].join(""));
+          }
+          if (isLetterTarget) {
+            nBackLetterCorrectCount++;
+            flashLetterFeedback(true);
+          } else {
+            nBackLetterIncorrectCount++;
+            flashLetterFeedback(false);
+          }
         }
       });
-    }
-    async function flashNBackTrial(trialSeq) {
-      let previousIndex = null;
-      for (let index of trialSeq) {
-        let flashColor = settings.squareColor;
-        if (previousIndex !== null && previousIndex === index) {
-          let alternatives = colorPalette.filter(color => color !== settings.squareColor);
-          flashColor = alternatives[Math.floor(Math.random() * alternatives.length)];
-        }
-        await nBackFlashCell(index, flashColor);
-        previousIndex = index;
-      }
-    }
-    async function runNBackTrial() {
-      nBackResponse = false;
-      const trialSeq = nBackTrials[currentTrialIndex];
-      trialStartTime = Date.now();
-      await flashNBackTrial(trialSeq);
-      const elapsed = Date.now() - trialStartTime;
-      const remaining = secTrialMs - elapsed;
-      if (remaining > 0) {
-        await new Promise(resolve => setTimeout(resolve, remaining));
-      }
-      // Evaluate response only if no response was made.
-      if (!nBackResponse) {
-        if (currentTrialIndex >= nLevel && arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel])) {
-          // Missed a target.
-          nBackIncorrectCount++;
-          flashNBackFeedback(false);
-        }
-        // Otherwise, for non-target with no response, do nothing.
-      }
-      currentTrialIndex++;
-      if (currentTrialIndex < totalTrials) {
-        setTimeout(runNBackTrial, 500);
-      } else {
-        document.getElementById('nBackScore').textContent =
-          `Session complete: ${nBackCorrectCount} correct, ${nBackIncorrectCount} incorrect.`;
-        nBackModeActive = false;
-      }
-    }
-    function arraysEqual(a, b) {
-      if (a.length !== b.length) return false;
-      for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
-      }
-      return true;
-    }
-    function flashNBackFeedback(isCorrect) {
-      const nBackPage = document.getElementById('nBackPage');
-      const originalBg = nBackPage.style.backgroundColor || "";
-      nBackPage.style.backgroundColor = isCorrect ? "lightgreen" : "red";
-      setTimeout(() => {
-        nBackPage.style.backgroundColor = originalBg;
-      }, 300);
-    }
-    function startNBack() {
-      buildNBackGrid();
-      generateNBackTrials();
-      currentTrialIndex = 0;
-      nBackCorrectCount = 0;
-      nBackIncorrectCount = 0;
-      nBackModeActive = true;
-      document.getElementById('nBackMessage').textContent = "";
-      document.getElementById('nBackScore').textContent = "";
-      document.getElementById('settingsPage').classList.remove('active');
-      document.getElementById('gamePage').classList.remove('active');
-      document.getElementById('nBackPage').classList.add('active');
-      document.getElementById('nBackPage').focus();
-      runNBackTrial();
-    }
-    // Immediate feedback when "L" is pressed in N-back mode.
-    document.addEventListener('keydown', function(e) {
-      if (nBackModeActive && e.code === 'KeyL' && !nBackResponse) {
-        nBackResponse = true;
-        let isTarget = false;
-        if (currentTrialIndex < nLevel) {
-          isTarget = false;
-        } else {
-          isTarget = arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel]);
-        }
-        if (isTarget) {
-          nBackCorrectCount++;
-          flashNBackFeedback(true);
-        } else {
-          nBackIncorrectCount++;
-          flashNBackFeedback(false);
-        }
-      }
-    });
+    })();
   </script>
 </body>
 </html>

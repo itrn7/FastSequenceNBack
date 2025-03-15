@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <title>Memory Game & Fast Sequence N Back Task</title>
@@ -11,14 +10,20 @@
       text-align: center;
       transition: background-color 0.3s;
     }
-
     /* Pages */
-    .page {
-      display: none;
-    }
+    .page { display: none; }
+    .active { display: block; }
 
-    .active {
-      display: block;
+    /* Header styling for the settings page */
+    #settingsHeader h1 {
+      font-size: 2.5em;
+      margin-bottom: 0.2em;
+    }
+    #settingsHeader p {
+      font-size: 1em;
+      margin-top: 0;
+      color: #555;
+      margin-bottom: 20px;
     }
 
     /* Settings Form */
@@ -26,12 +31,10 @@
       display: block;
       margin: 5px 0;
     }
-
     #settingsForm input,
     #settingsForm select {
       margin-left: 10px;
     }
-
     #settingsForm button {
       margin: 10px;
       padding: 8px 12px;
@@ -75,7 +78,6 @@
       flex-direction: column;
       justify-content: flex-start;
     }
-
     .sideButtons button {
       margin-bottom: 10px;
       padding: 10px;
@@ -105,11 +107,13 @@
     }
   </style>
 </head>
-
 <body>
   <!-- SETTINGS PAGE -->
   <div id="settingsPage" class="page active">
-    <h1>Task Settings</h1>
+    <div id="settingsHeader">
+      <h1>Fast Sequence Synesthesia N Back</h1>
+      <p>created by @0xfrankensteinx0 (Discord)</p>
+    </div>
     <form id="settingsForm">
       <!-- Common settings -->
       <label>Rows: <input type="number" id="rows" min="2" max="20" value="4" required></label>
@@ -151,8 +155,7 @@
       <label>Sec/Trial: <input type="number" id="secTrial" min="1" step="0.1" value="2" required></label>
       <label>Trial Number/Set: <input type="number" id="trialNum" min="1" value="20" required></label>
       <label>Percent Match: <input type="number" id="percentMatch" min="0" max="100" value="30" required></label>
-      <label>Interference Control (%): <input type="number" id="interferenceControl" min="0" max="100" value="50"
-          required></label>
+      <label>Interference Control (%): <input type="number" id="interferenceControl" min="0" max="100" value="50" required></label>
       <label>Add Letter Stimulus:
         <input type="checkbox" id="letterStimulus" checked>
       </label>

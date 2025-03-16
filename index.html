@@ -268,7 +268,7 @@
         <p id="nBackScore"></p>
         <p id="nBackLetterScore"></p>
         <p id="nBackOverallScore"></p>
-        <p id="nBackDuration"></p>  <!-- New: Session duration -->
+        <p id="nBackDuration"></p>
       </div>
     </div>
     <p id="nBackMessage"></p>
@@ -370,7 +370,7 @@
       let letterStimulus = document.getElementById('letterStimulus').checked;
       let nBackModeActive = false;
       let trialStartTime = 0;
-      let nBackSessionStartTime = 0;  // NEW: Session start time
+      let nBackSessionStartTime = 0;  // NEW: session start time for current session
 
       // Synesthesia settings
       let graphemeColor = false;
@@ -624,7 +624,6 @@
         userSequence = [];
         messageEl.textContent = "";
         retryBtn.style.display = "none";
-        // No timer for memory game
 
         doSpatialMusicForThisMemorySeq = (Math.random() * 100 < spatialMusicChance);
 
@@ -1006,12 +1005,12 @@
         }
 
         if (!nBackSpatialResponse && currentTrialIndex >= nLevel &&
-          arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel])) {
+            arraysEqual(nBackTrials[currentTrialIndex], nBackTrials[currentTrialIndex - nLevel])) {
           nBackIncorrectCount++;
           flashSpatialFeedback(false);
         }
         if (letterStimulus && !nBackLetterResponse && currentTrialIndex >= nLevel &&
-          letterTrials[currentTrialIndex].join("") === letterTrials[currentTrialIndex - nLevel].join("")) {
+            letterTrials[currentTrialIndex].join("") === letterTrials[currentTrialIndex - nLevel].join("")) {
           nBackLetterIncorrectCount++;
           flashLetterFeedback(false);
         }
@@ -1021,7 +1020,7 @@
           let nextID = setTimeout(runNBackTrial, 500);
           pendingTimeouts.push(nextID);
         } else {
-          // Session ends here.
+          // End of session.
           document.getElementById('nBackScore').textContent =
             `Spatial: ${nBackCorrectCount} correct, ${nBackIncorrectCount} incorrect.`;
           if (letterStimulus) {
@@ -1036,29 +1035,46 @@
             overallPercent = ((totalCorrect / totalResponses) * 100).toFixed(1);
           }
           document.getElementById('nBackOverallScore').textContent =
-            `Session accuracy: ${overallPercent}%`;
-          
-          // NEW: Calculate and display session duration.
-          const sessionDurationMs = Date.now() - nBackSessionStartTime;
-          const seconds = Math.floor(sessionDurationMs / 1000);
-          document.getElementById('nBackDuration').textContent = `Session duration: ${seconds} seconds`;
+            `Overall accuracy: ${overallPercent}%`;
 
-          // NEW: Update daily average score.
+          // NEW: Compute and display session duration.
+          const sessionDurationMs = Date.now() - nBackSessionStartTime;
+          const sessionSeconds = Math.floor(sessionDurationMs / 1000);
+          document.getElementById('nBackDuration').textContent = `Session duration: ${sessionSeconds} seconds`;
+
+          // NEW: Update and display daily average score.
           const today = new Date().toISOString().slice(0,10);
-          const storageKey = "nbackScores_" + today;
+          const scoreStorageKey = "nbackScores_" + today;
           let scores = [];
           try {
-            scores = JSON.parse(localStorage.getItem(storageKey)) || [];
+            scores = JSON.parse(localStorage.getItem(scoreStorageKey)) || [];
           } catch(e) {
             scores = [];
           }
           scores.push(parseFloat(overallPercent));
-          localStorage.setItem(storageKey, JSON.stringify(scores));
+          localStorage.setItem(scoreStorageKey, JSON.stringify(scores));
           const avg = (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1);
+
+          // NEW: Update daily training time.
+          const timeStorageKey = "nbackTrainingTime_" + today;
+          let totalTrainingTimeMs = 0;
+          try {
+            totalTrainingTimeMs = parseInt(localStorage.getItem(timeStorageKey)) || 0;
+          } catch(e) {
+            totalTrainingTimeMs = 0;
+          }
+          totalTrainingTimeMs += sessionDurationMs;
+          localStorage.setItem(timeStorageKey, totalTrainingTimeMs.toString());
+          const totalSeconds = Math.floor(totalTrainingTimeMs / 1000);
+          const minutes = Math.floor(totalSeconds / 60);
+          const remSeconds = totalSeconds % 60;
+          const formattedTime = `${minutes} minutes ${remSeconds} seconds`;
+
+          // Update the dailyScoreWindow with both daily average score and daily training time.
           document.getElementById('dailyScoreWindow').innerHTML =
-            `<strong>Daily Average Score:</strong> ${avg}%<br>
+            `<strong>Daily Average Score:</strong> ${avg}% &nbsp;&nbsp; <strong>Daily Total Training Time:</strong> ${formattedTime}<br>
              <em>daily averaged % scores do NOT account for changes in settings etc. For consistency, it is recommended to keep settings the same within each training day</em>`;
-          
+
           nBackModeActive = false;
         }
       }
@@ -1120,8 +1136,7 @@
         nBackLetterCorrectCount = 0;
         nBackLetterIncorrectCount = 0;
         nBackModeActive = true;
-
-        // NEW: Record session start time.
+        // NEW: Record the session start time.
         nBackSessionStartTime = Date.now();
 
         document.getElementById('nBackScore').textContent = "";

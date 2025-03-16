@@ -45,7 +45,7 @@
     .gameContainer {
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       margin-top: 20px;
     }
 
@@ -82,7 +82,6 @@
 
     /* Side Buttons */
     .sideButtons {
-      /* Removed top margin to eliminate extra space */
       margin-top: 0;
     }
     .sideButtons button {
@@ -111,6 +110,18 @@
       align-items: flex-start;
       gap: 5px;
       font-size: 16px;
+    }
+
+    /* New Daily Average Score Window (below the N-back area) */
+    .dailyScoreWindow {
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 14px;
+      max-width: 80vmin;
+      margin-left: auto;
+      margin-right: auto;
+      background-color: #f9f9f9;
     }
 
     /* --------- Instructions Overlay Styling --------- */
@@ -156,7 +167,6 @@
     <form id="settingsForm">
       <!-- Instructions Button -->
       <button type="button" id="instructionsBtn">Instructions</button>
-
       <!-- Common settings -->
       <label>Rows: <input type="number" id="rows" min="2" max="20" value="4" required></label>
       <label>Columns: <input type="number" id="cols" min="2" max="20" value="4" required></label>
@@ -217,7 +227,6 @@
       <label>Spatial-Music (%):
         <input type="number" id="spatialMusic" min="0" max="100" value="25">
       </label>
-
       <br><br>
       <button type="button" id="memoryGameBtn">Save Settings &amp; Play Memory Game</button>
       <button type="button" id="nBackBtn">Fast Sequence N Back</button>
@@ -242,8 +251,8 @@
   <div id="nBackPage" class="page" tabindex="0">
     <h1>Fast Sequence N Back</h1>
     <p>
-      Press <strong>L</strong> if the SPATIAL sequence matches the sequence presented N trials back(feedback RIGHT side).<br>
-      Press <strong>K</strong> if the LETTER sequence matches N trials back (feedback LEFT side).
+      Press <strong>L</strong> if the SPATIAL sequence matches the sequence presented N trials back (feedback on RIGHT).<br>
+      Press <strong>K</strong> if the LETTER sequence matches N trials back (feedback on LEFT).
     </p>
     <!-- New wrapper with two columns: left (game) and right (stats) -->
     <div class="nBackWrapper">
@@ -259,9 +268,12 @@
         <p id="nBackScore"></p>
         <p id="nBackLetterScore"></p>
         <p id="nBackOverallScore"></p>
+        <p id="nBackDuration"></p>  <!-- New: Session duration -->
       </div>
     </div>
     <p id="nBackMessage"></p>
+    <!-- New Daily Average Score Window -->
+    <div class="dailyScoreWindow" id="dailyScoreWindow"></div>
   </div>
 
   <!-- Instructions Overlay -->
@@ -290,7 +302,6 @@
         <li>percent match to determine how many trials will show “matches”</li>
         <li>interference control for producing more “tricky” sequences</li>
       </ul>
-
       <p><strong>Synesthesia details:</strong></p>
       <p>
         Grapheme-color synesthesia is a phenomenon in certain brains where each letter has an 
@@ -359,6 +370,7 @@
       let letterStimulus = document.getElementById('letterStimulus').checked;
       let nBackModeActive = false;
       let trialStartTime = 0;
+      let nBackSessionStartTime = 0;  // NEW: Session start time
 
       // Synesthesia settings
       let graphemeColor = false;
@@ -612,6 +624,7 @@
         userSequence = [];
         messageEl.textContent = "";
         retryBtn.style.display = "none";
+        // No timer for memory game
 
         doSpatialMusicForThisMemorySeq = (Math.random() * 100 < spatialMusicChance);
 
@@ -1008,6 +1021,7 @@
           let nextID = setTimeout(runNBackTrial, 500);
           pendingTimeouts.push(nextID);
         } else {
+          // Session ends here.
           document.getElementById('nBackScore').textContent =
             `Spatial: ${nBackCorrectCount} correct, ${nBackIncorrectCount} incorrect.`;
           if (letterStimulus) {
@@ -1022,7 +1036,29 @@
             overallPercent = ((totalCorrect / totalResponses) * 100).toFixed(1);
           }
           document.getElementById('nBackOverallScore').textContent =
-            `Overall accuracy: ${overallPercent}%`;
+            `Today's total averaged accuracy: ${overallPercent}%`;
+          
+          // NEW: Calculate and display session duration.
+          const sessionDurationMs = Date.now() - nBackSessionStartTime;
+          const seconds = Math.floor(sessionDurationMs / 1000);
+          document.getElementById('nBackDuration').textContent = `Session duration: ${seconds} seconds`;
+
+          // NEW: Update daily average score.
+          const today = new Date().toISOString().slice(0,10);
+          const storageKey = "nbackScores_" + today;
+          let scores = [];
+          try {
+            scores = JSON.parse(localStorage.getItem(storageKey)) || [];
+          } catch(e) {
+            scores = [];
+          }
+          scores.push(parseFloat(overallPercent));
+          localStorage.setItem(storageKey, JSON.stringify(scores));
+          const avg = (scores.reduce((sum, val) => sum + val, 0) / scores.length).toFixed(1);
+          document.getElementById('dailyScoreWindow').innerHTML =
+            `<strong>Daily Average Score:</strong> ${avg}%<br>
+             <em>daily averaged % scores do NOT account for changes in settings etc. For consistency, it is recommended to keep settings the same within each training day</em>`;
+          
           nBackModeActive = false;
         }
       }
@@ -1073,7 +1109,6 @@
         document.getElementById('spatialFeedback').style.backgroundColor = "transparent";
         if (spatialFeedbackTimer) { clearTimeout(spatialFeedbackTimer); spatialFeedbackTimer = null; }
         if (letterFeedbackTimer) { clearTimeout(letterFeedbackTimer); letterFeedbackTimer = null; }
-
         buildNBackGrid();
         generateNBackTrials();
         if (letterStimulus) {
@@ -1086,9 +1121,13 @@
         nBackLetterIncorrectCount = 0;
         nBackModeActive = true;
 
+        // NEW: Record session start time.
+        nBackSessionStartTime = Date.now();
+
         document.getElementById('nBackScore').textContent = "";
         document.getElementById('nBackLetterScore').textContent = "";
         document.getElementById('nBackOverallScore').textContent = "";
+        document.getElementById('nBackDuration').textContent = "";
 
         document.getElementById('settingsPage').classList.remove('active');
         document.getElementById('gamePage').classList.remove('active');

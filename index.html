@@ -1036,7 +1036,7 @@
             overallPercent = ((totalCorrect / totalResponses) * 100).toFixed(1);
           }
           document.getElementById('nBackOverallScore').textContent =
-            `Today's total averaged accuracy: ${overallPercent}%`;
+            `Session accuracy: ${overallPercent}%`;
           
           // NEW: Calculate and display session duration.
           const sessionDurationMs = Date.now() - nBackSessionStartTime;
